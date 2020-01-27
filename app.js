@@ -1,12 +1,33 @@
-var express = require('express')
-    , app = express()
-    , bodyParser = require('body-parser')
-    , mongoose = require('mongoose'),
+var express = require('express'),
+    app = express(),
+    bodyParser = require('body-parser'),
+    mongoose = require('mongoose'),
+    passport = require('passport'),
+    LocalStrategy = require('passport-local'),
     Campground = require('./models/campground'),
     seedDB = require('./seeds'),
-    Comment = require('./models/comment')
+    Comment = require('./models/comment'),
+    User = require('./models/user')
 
 // seedDB()
+
+// PASSPORT CONFIGURATION
+app.use(require('express-session')({
+    secret: 'Wowowowowow',
+    resave: false,
+    saveUninitialized: false
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+passport.use(new LocalStrategy(User.authenticate()))
+passport.serializeUser(User.serializeUser())
+passport.deserializeUser(User.deserializeUser())
+
+// Attention: this middleware must be put behind the above middlewares
+app.use(function(req, res, next) {
+    res.locals.currentUser = req.user;
+    next()
+})
 
 mongoose.connect('mongodb://localhost/yelp_camp', { useNewUrlParser: true, useUnifiedTopology: true })
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -26,11 +47,15 @@ app.get('/campgrounds', function (req, res) {
             res.render('campgrounds/index', { campgrounds: allcampgrounds })
         }
     })
-    // 
+})
+
+// NEW - show form to create new campground
+app.get('/campgrounds/new', isLoggedIn, function (req, res) {
+    res.render('campgrounds/new')
 })
 
 // CREATE - add new campgrounds
-app.post('/campgrounds', function (req, res) {
+app.post('/campgrounds', isLoggedIn, function (req, res) {
     Campground.create(req.body.campground, function (err, newlyCreated) {
         if (err) {
             console.log(err)
@@ -38,11 +63,6 @@ app.post('/campgrounds', function (req, res) {
             res.redirect('/campgrounds')
         }
     })
-})
-
-// NEW - show form to create new campground
-app.get('/campgrounds/new', function (req, res) {
-    res.render('campgrounds/new')
 })
 
 // SHOW - shows more info about one campground
@@ -63,7 +83,7 @@ app.get('/campgrounds/:id', function (req, res) {
 // COMMENTS ROUTES
 // ========================================
 
-app.get('/campgrounds/:id/comments/new', function (req, res) {
+app.get('/campgrounds/:id/comments/new', isLoggedIn, function (req, res) {
     Campground.findById(req.params.id, function (err, campground) {
         if (err) {
             console.log(err)
@@ -73,7 +93,7 @@ app.get('/campgrounds/:id/comments/new', function (req, res) {
     })
 })
 
-app.post('/campgrounds/:id/comments', function (req, res) {
+app.post('/campgrounds/:id/comments', isLoggedIn, function (req, res) {
     Campground.findById(req.params.id, function (err, campground) {
         if (err) {
             console.log(err)
@@ -93,6 +113,52 @@ app.post('/campgrounds/:id/comments', function (req, res) {
     })
 })
 
+// =================
+// AUTH ROUTES
+// =================
+
+// show register form
+app.get('/register', function (req, res) {
+    res.render('register')
+})
+
+// handle sign up logic
+app.post('/register', function (req, res) {
+    var newUser = new User({ username: req.body.username })
+    User.register(newUser, req.body.password, function (err, user) {
+        if (err) {
+            console.log(err)
+            return res.render('register')
+        }
+        passport.authenticate('local')(req, res, function () {
+            res.redirect('/campgrounds')
+        })
+    })
+})
+
+// show login form
+app.get('/login', function (req, res) {
+    res.render('login')
+})
+
+// handle login logic
+app.post('/login', passport.authenticate('local', { successRedirect: '/campgrounds', failureRedirect: '/login' }), function (req, res) { })
+
+// logout route
+app.get('/logout', function (req, res) {
+    req.logout()
+    res.redirect('/campgrounds')
+})
+
+
+
 app.listen(2333, function () {
     console.log("Server is now listening!")
 })
+
+function isLoggedIn(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next()
+    }
+    res.redirect('/login')
+}
