@@ -20,6 +20,11 @@ router.get('/new', isLoggedIn, function (req, res) {
 
 // CREATE - add new campgrounds
 router.post('/', isLoggedIn, function (req, res) {
+    var author = {
+        id: req.user._id,
+        username: req.user.username
+    }
+    req.body.campground.author = author
     Campground.create(req.body.campground, function (err, newlyCreated) {
         if (err) {
             console.log(err)
