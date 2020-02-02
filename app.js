@@ -16,6 +16,8 @@ var commentRoutes = require('./routes/comments'),
 
 // seedDB()
 
+mongoose.set('useFindAndModify', false)
+
 // PASSPORT CONFIGURATION
 app.use(require('express-session')({
     secret: 'Wowowowowow',
