@@ -48,7 +48,7 @@ router.get('/:id', function (req, res) {
 })
 
 // EDIT CAPMGROUND ROUTE
-router.get('/:id/edit', isLoggedIn, checkCampgroundOwnership, function (req, res) {
+router.get('/:id/edit', checkCampgroundOwnership, function (req, res) {
     Campground.findById(req.params.id, function (err, foundCampground) {
         res.render('campgrounds/edit', { campground: foundCampground })
     })
