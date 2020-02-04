@@ -8,7 +8,8 @@ var express = require('express'),
     seedDB = require('./seeds'),
     methodOverride = require('method-override'),
     Comment = require('./models/comment'),
-    User = require('./models/user')
+    User = require('./models/user'),
+    flash = require('connect-flash')
 
 var commentRoutes = require('./routes/comments'),
     campgroundRoutes = require('./routes/campgrounds'),
@@ -24,16 +25,19 @@ app.use(require('express-session')({
     resave: false,
     saveUninitialized: false
 }))
+app.use(flash())
 app.use(methodOverride('_method'))
 app.use(passport.initialize())
 app.use(passport.session())
 passport.use(new LocalStrategy(User.authenticate()))
 passport.serializeUser(User.serializeUser())
 passport.deserializeUser(User.deserializeUser())
-
+ 
 // Attention: this middleware must be put behind the above middlewares
 app.use(function (req, res, next) {
     res.locals.currentUser = req.user;
+    res.locals.error = req.flash('error')
+    res.locals.success = req.flash('success')
     next()
 })
 
