@@ -41,7 +41,7 @@ app.use(function (req, res, next) {
     next()
 })
 
-mongoose.connect('mongodb+srv://mapoos:DIkIMKj2B1jagmw0@yelpcamp-v1vug.mongodb.net/test?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect('mongodb+srv://mapoos:DIkIMKj2B1jagmw0@yelpcamp-v1vug.mongodb.net/yelp_camp?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true })
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static(__dirname + '/public'))
 app.set('view engine', 'ejs')
